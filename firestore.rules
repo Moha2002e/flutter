@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Règles pour les clubs
+    match /clubs/{clubId} {
+      // Tout le monde peut lire les clubs
+      allow read: if true;
+      
+      // Seuls les utilisateurs authentifiés peuvent créer des clubs
+      allow create: if request.auth != null;
+      
+      // Seul le créateur peut modifier le club
+      allow update: if request.auth != null && 
+                       request.resource.data.createurId == request.auth.uid;
+      
+      // Seul le créateur peut supprimer le club
+      allow delete: if request.auth != null && 
+                       resource.data.createurId == request.auth.uid;
+      
+      // Sous-collection membres
+      match /membres/{membreId} {
+        // Tout le monde peut lire la liste des membres
+        allow read: if true;
+        
+        // Un utilisateur peut s'ajouter comme membre
+        allow create: if request.auth != null && 
+                         request.auth.uid == membreId;
+        
+        // Un utilisateur peut se retirer comme membre
+        allow delete: if request.auth != null && 
+                         request.auth.uid == membreId;
+      }
+    }
+    
+    // Règles pour les annonces
+    match /annonces/{annonceId} {
+      // Tout le monde peut lire les annonces
+      allow read: if true;
+      
+      // Seuls les utilisateurs authentifiés peuvent créer des annonces
+      allow create: if request.auth != null;
+      
+      // Seul le créateur peut modifier l'annonce
+      allow update: if request.auth != null && 
+                       request.resource.data.createurId == request.auth.uid;
+      
+      // Seul le créateur peut supprimer l'annonce
+      allow delete: if request.auth != null && 
+                       resource.data.createurId == request.auth.uid;
+    }
+    
+    // Règles pour les événements
+    match /evenements/{evenementId} {
+      // Tout le monde peut lire les événements
+      allow read: if true;
+      
+      // Seuls les utilisateurs authentifiés peuvent créer des événements
+      allow create: if request.auth != null;
+      
+      // Seul le créateur peut modifier l'événement
+      allow update: if request.auth != null && 
+                       request.resource.data.createurId == request.auth.uid;
+      
+      // Seul le créateur peut supprimer l'événement
+      allow delete: if request.auth != null && 
+                       resource.data.createurId == request.auth.uid;
+    }
+    
+    // Règles pour les cours
+    match /cours/{coursId} {
+      // Tout le monde peut lire les cours
+      allow read: if true;
+      
+      // Seuls les utilisateurs authentifiés peuvent créer des cours
+      allow create: if request.auth != null;
+      
+      // Seul le créateur peut modifier le cours
+      allow update: if request.auth != null && 
+                       request.resource.data.createurId == request.auth.uid;
+      
+      // Seul le créateur peut supprimer le cours
+      allow delete: if request.auth != null && 
+                       resource.data.createurId == request.auth.uid;
+    }
+  }
+}
+

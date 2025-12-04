@@ -4,8 +4,9 @@ import '../styles/colors.dart';
 import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
-import '../services/firebase_firestore.dart';
+import '../controllers/annonce_controller.dart';
 import '../models/annonce.dart';
+import '../utils/guest_utils.dart';
 import 'CreerAnnonceScreen.dart';
 import 'AnnonceDetailScreen.dart';
 
@@ -37,14 +38,14 @@ class AnnoncesScreen extends StatelessWidget {
     );
   }
 
-  /// Construit l'en-tête avec bouton retour, titre et bouton ajouter
+  /// Construit l'en-tête avec titre et bouton ajouter
   Widget _construireEnTete(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(kHorizontalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _construireBoutonRetour(context),
+          const SizedBox(width: kBackButtonSize), // Espace pour équilibrer le layout
           const Text('Annonces', style: kAnnoncesScreenTitleText),
           _construireBoutonAjouter(context),
         ],
@@ -52,38 +53,22 @@ class AnnoncesScreen extends StatelessWidget {
     );
   }
 
-  /// Construit le bouton retour
-  Widget _construireBoutonRetour(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-      },
-      child: Container(
-        width: kBackButtonSize,
-        height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.arrow_back, color: Colors.black),
-      ),
-    );
-  }
-
   /// Construit le bouton ajouter
   Widget _construireBoutonAjouter(BuildContext context) {
+    final style = getGuestButtonStyle();
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, CreerAnnonceScreen.routeName);
-      },
+      onTap: () => handleGuestAction(
+        context,
+        () => Navigator.pushNamed(context, CreerAnnonceScreen.routeName),
+      ),
       child: Container(
         width: kBackButtonSize,
         height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
+        decoration: BoxDecoration(
+          color: kWhiteColor.withOpacity(style['opacity'] as double),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.add, color: Colors.black),
+        child: Icon(Icons.add, color: style['color'] as Color),
       ),
     );
   }
@@ -91,8 +76,8 @@ class AnnoncesScreen extends StatelessWidget {
   /// Construit la liste des annonces
   Widget _construireListeAnnonces() {
     return Expanded(
-      child: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: FirebaseFirestoreService.obtenirToutesLesAnnonces(),
+      child: StreamBuilder<List<Annonce>>(
+        stream: AnnonceController.obtenirToutesLesAnnoncesStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -124,8 +109,7 @@ class AnnoncesScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: kHorizontalPadding),
             itemCount: annonces.length,
             itemBuilder: (context, index) {
-              final annonce = Annonce.fromFirestore(annonces[index], annonces[index]['id']);
-              return _construireCarteAnnonce(context, annonce);
+              return _construireCarteAnnonce(context, annonces[index]);
             },
           );
         },

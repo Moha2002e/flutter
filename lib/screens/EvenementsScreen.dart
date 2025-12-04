@@ -4,8 +4,9 @@ import '../styles/colors.dart';
 import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
-import '../services/firebase_firestore.dart';
+import '../controllers/evenement_controller.dart';
 import '../models/evenement.dart';
+import '../utils/guest_utils.dart';
 import 'CreerEvenementScreen.dart';
 import 'EvenementDetailScreen.dart';
 
@@ -37,14 +38,14 @@ class EvenementsScreen extends StatelessWidget {
     );
   }
 
-  /// Construit l'en-tête avec bouton retour, titre et bouton ajouter
+  /// Construit l'en-tête avec titre et bouton ajouter
   Widget _construireEnTete(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(kHorizontalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _construireBoutonRetour(context),
+          const SizedBox(width: kBackButtonSize), // Espace pour équilibrer le layout
           const Text('Événements', style: kEvenementsScreenTitleText),
           _construireBoutonAjouter(context),
         ],
@@ -52,38 +53,22 @@ class EvenementsScreen extends StatelessWidget {
     );
   }
 
-  /// Construit le bouton retour
-  Widget _construireBoutonRetour(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-      },
-      child: Container(
-        width: kBackButtonSize,
-        height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.arrow_back, color: Colors.black),
-      ),
-    );
-  }
-
   /// Construit le bouton ajouter
   Widget _construireBoutonAjouter(BuildContext context) {
+    final style = getGuestButtonStyle();
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, CreerEvenementScreen.routeName);
-      },
+      onTap: () => handleGuestAction(
+        context,
+        () => Navigator.pushNamed(context, CreerEvenementScreen.routeName),
+      ),
       child: Container(
         width: kBackButtonSize,
         height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
+        decoration: BoxDecoration(
+          color: kWhiteColor.withOpacity(style['opacity'] as double),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.add, color: Colors.black),
+        child: Icon(Icons.add, color: style['color'] as Color),
       ),
     );
   }
@@ -91,8 +76,8 @@ class EvenementsScreen extends StatelessWidget {
   /// Construit la liste des événements
   Widget _construireListeEvenements() {
     return Expanded(
-      child: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: FirebaseFirestoreService.obtenirTousLesEvenements(),
+      child: StreamBuilder<List<Evenement>>(
+        stream: EvenementController.obtenirTousLesEvenementsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -124,8 +109,7 @@ class EvenementsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: kHorizontalPadding),
             itemCount: evenements.length,
             itemBuilder: (context, index) {
-              final evenement = Evenement.fromFirestore(evenements[index], evenements[index]['id']);
-              return _construireCarteEvenement(context, evenement);
+              return _construireCarteEvenement(context, evenements[index]);
             },
           );
         },

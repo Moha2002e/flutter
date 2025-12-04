@@ -48,7 +48,7 @@ const kTitleSideBar = TextStyle(
 
 // Styles pour l'écran de connexion
 const double kAppNameFontSize = 24.0;
-const double kLoginTitleFontSize = 28.0;
+const double kLoginTitleFontSize = 24.0;
 const double kLabelFontSize = 16.0;
 const double kInputFontSize = 16.0;
 const double kLinkFontSize = 14.0;
@@ -66,6 +66,7 @@ const TextStyle kLoginTitleText = TextStyle(
   fontSize: kLoginTitleFontSize,
   fontWeight: FontWeight.w600,
   fontFamily: 'Avenir',
+
 );
 
 const TextStyle kLabelText = TextStyle(

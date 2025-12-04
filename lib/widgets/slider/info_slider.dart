@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../styles/colors.dart';
+import '../../styles/sizes.dart';
 import '../../styles/spacings.dart';
 import '../../styles/texts.dart';
 
@@ -14,7 +15,7 @@ class InfoSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage('assets/img/back1.png'),
           fit: BoxFit.cover,
@@ -23,7 +24,7 @@ class InfoSlider extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: kVerticalPadding),
         child: SizedBox(
-          height: 105,
+          height: kInfoSliderHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _items.length,
@@ -37,7 +38,7 @@ class InfoSlider extends StatelessWidget {
                       vertical: kVerticalPadding,
                     ),
                     decoration: BoxDecoration(
-                      color: kBackgroundColor.withOpacity(0.7),
+                      color: kBackgroundColor.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     width: _getContainerWidth(context),

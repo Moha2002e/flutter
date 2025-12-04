@@ -6,6 +6,7 @@ import 'package:projectexamen/screens/WelcomeScreen.dart';
 import 'package:projectexamen/screens/LoginScreen.dart';
 import 'package:projectexamen/screens/RegisterScreen.dart';
 import 'package:projectexamen/screens/HomeScreen.dart';
+import 'package:projectexamen/screens/main_navigation_screen.dart';
 import 'package:projectexamen/screens/ProfileScreen.dart';
 import 'package:projectexamen/screens/ClubsScreen.dart';
 import 'package:projectexamen/screens/CreerClubScreen.dart';
@@ -19,6 +20,9 @@ import 'package:projectexamen/screens/CreerCoursScreen.dart';
 import 'package:projectexamen/screens/CoursDetailScreen.dart';
 import 'package:projectexamen/screens/AnnonceDetailScreen.dart';
 import 'package:projectexamen/screens/EvenementDetailScreen.dart';
+import 'package:projectexamen/screens/ModifierClubScreen.dart';
+import 'package:projectexamen/screens/ModifierAnnonceScreen.dart';
+import 'package:projectexamen/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +35,11 @@ void main() async {
     // Ne pas continuer si Firebase n'est pas initialisé
     rethrow;
   }
+  
+  // Initialiser le service de notifications
+  await NotificationService().initialize();
+  debugPrint('Notification service initialized');
+  
   runApp(const MyApp());
 }
 
@@ -57,6 +66,7 @@ class MyApp extends StatelessWidget {
         WelcomeScreen.routeName: (context) => const WelcomeScreen(),
         LoginScreen.routeName: (context) => const LoginScreen(),
         RegisterScreen.routeName: (context) => const RegisterScreen(),
+        MainNavigationScreen.routeName: (context) => const MainNavigationScreen(),
         HomeScreen.routeName: (context) => const HomeScreen(),
         ProfileScreen.routeName: (context) => const ProfileScreen(),
         ClubsScreen.routeName: (context) => const ClubsScreen(),
@@ -67,12 +77,28 @@ class MyApp extends StatelessWidget {
         CreerEvenementScreen.routeName: (context) => const CreerEvenementScreen(),
         CalendrierScreen.routeName: (context) => const CalendrierScreen(),
         CreerCoursScreen.routeName: (context) => const CreerCoursScreen(),
+        ModifierClubScreen.routeName: (context) => const ModifierClubScreen(),
+        ModifierAnnonceScreen.routeName: (context) => const ModifierAnnonceScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == ClubDetailScreen.routeName) {
           final clubId = settings.arguments as String;
           return MaterialPageRoute(
             builder: (context) => ClubDetailScreen(clubId: clubId),
+          );
+        }
+        if (settings.name == ModifierClubScreen.routeName) {
+          final club = settings.arguments as dynamic;
+          return MaterialPageRoute(
+            builder: (context) => ModifierClubScreen(),
+            settings: RouteSettings(arguments: club),
+          );
+        }
+        if (settings.name == ModifierAnnonceScreen.routeName) {
+          final annonce = settings.arguments as dynamic;
+          return MaterialPageRoute(
+            builder: (context) => ModifierAnnonceScreen(),
+            settings: RouteSettings(arguments: annonce),
           );
         }
         if (settings.name == CoursDetailScreen.routeName) {

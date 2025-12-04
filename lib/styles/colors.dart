@@ -57,9 +57,22 @@ const kClubsButtonGradient = LinearGradient(
   end: Alignment.bottomRight,
 );
 
+// Gradient pour la barre de navigation en bas
+const kBottomNavBarGradient = LinearGradient(
+  colors: [
+    Color(0xFF001645), // Bleu foncé
+    Color(0xFF0172B2), // Bleu moyen
+  ],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
 // Opacités pour ProfileScreen
 const double kProfileAvatarOpacity = 0.2;
 const double kProfileInfoBackgroundOpacity = 0.1;
 
 // Opacités pour ClubsScreen
 const double kClubCardAvatarOpacity = 0.2;
+
+// Opacité pour les icônes non sélectionnées de la barre de navigation
+const double kBottomNavBarUnselectedOpacity = 0.7;

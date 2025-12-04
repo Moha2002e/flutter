@@ -5,8 +5,11 @@ import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
 import '../services/firebase_auth.dart';
+import '../controllers/home_controller.dart';
 import '../utils/user_utils.dart';
+import '../utils/guest_utils.dart';
 import 'LoginScreen.dart';
+import 'WelcomeScreen.dart';
 import 'ProfileScreen.dart';
 import 'ClubsScreen.dart';
 import 'AnnoncesScreen.dart';
@@ -14,7 +17,7 @@ import 'EvenementsScreen.dart';
 import 'CalendrierScreen.dart';
 
 /// Écran d'accueil principal de l'application
-/// Affiche un message de bienvenue et une grille de boutons pour accéder aux différentes fonctionnalités
+/// Affiche un message de bienvenue et les statistiques (nombre de cours, annonces, événements et clubs)
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -22,56 +25,51 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Récupère l'utilisateur actuellement connecté
     final utilisateur = FirebaseAuthService.currentUser;
-    
-    // Obtient le nom d'affichage de l'utilisateur
-    final nomUtilisateur = getUserName(utilisateur);
+    final nomUtilisateur = isGuest() ? 'Invité' : getUserName(utilisateur);
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: kBackgroundGradient,
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(kHomeContentPadding),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(kHomeContentBorderRadius),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(kHomeContentPadding),
-                child: Column(
-                  children: [
-                    // En-tête avec les boutons profil et déconnexion
-                    Row(
+      body: SizedBox.expand(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: kBackgroundGradient,
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(kHomeContentPadding),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(kHomeContentBorderRadius),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(kHomeContentPadding),
+                  child: Column(
+                    children: [
+                      // En-tête avec les boutons profil et déconnexion
+                      Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Bouton pour accéder au profil
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, ProfileScreen.routeName);
-                          },
-                          child: Container(
-                            width: kBackButtonSize,
-                            height: kBackButtonSize,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
+                        // Bouton pour accéder au profil (masqué si invité)
+                        if (!isGuest())
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, ProfileScreen.routeName),
+                            child: Container(
+                              width: kBackButtonSize,
+                              height: kBackButtonSize,
+                              decoration: const BoxDecoration(shape: BoxShape.circle),
+                              child: const Icon(
+                                Icons.person_outline,
+                                color: kWhiteColor,
+                                size: kHomeProfilDeconnectSize,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: kWhiteColor,
-                              size: kHomeProfilDeconnectSize,
-                            ),
-                          ),
-                        ),
+                          )
+                        else
+                          const SizedBox(width: kBackButtonSize),
                         
                         // Bouton pour se déconnecter
                         GestureDetector(
-                          onTap: () {
-                            _gererDeconnexion(context);
-                          },
+                          onTap: () => HomeController.signOut(context),
                           child: Container(
                             width: kBackButtonSize,
                             height: kBackButtonSize,
@@ -86,148 +84,53 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
-                    
-                    // Espacement après l'en-tête
-                    const SizedBox(height: kSpacingAfterHeader),
-                    
-                    // Message de bienvenue personnalisé
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Bonjour, \n$nomUtilisateur',
-                        style: kGreetingText.copyWith(fontSize: kGreetingFontSize),
                       ),
-                    ),
-                    
-                    // Espacement après le message
-                    const SizedBox(height: kSpacingAfterGreeting),
-                    
-                    // Grille de boutons pour les fonctionnalités
-                    Expanded(
-                      child: GridView.count(
-                        crossAxisCount: kHomeGridCrossAxisCount,
-                        crossAxisSpacing: kSpacingBetweenButtons,
-                        mainAxisSpacing: kSpacingBetweenButtons,
+                      
+                      // Espacement après l'en-tête
+                      const SizedBox(height: kSpacingAfterHeader),
+                      
+                      // Message de bienvenue personnalisé
+                      Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Bouton Calendrier
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, CalendrierScreen.routeName);
-                            },
-                            child: Container(
-                              height: kHomeButtonHeight,
-                              decoration: BoxDecoration(
-                                gradient: kCalendarButtonGradient,
-                                borderRadius: BorderRadius.circular(kHomeButtonBorderRadius),
+                          Text(
+                            'Bonjour, \n$nomUtilisateur',
+                            style: kGreetingText.copyWith(fontSize: kGreetingFontSize),
+                          ),
+                          if (isGuest()) ...[
+                            const SizedBox(height: kSmallSpace),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: kInputFieldPadding,
+                                vertical: kSmallSpace,
                               ),
-                              child: const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_outlined,
-                                    color: kWhiteColor,
-                                    size: kHomeButtonIconSize,
-                                  ),
-                                  SizedBox(height: kSmallSpace),
-                                  Text(
-                                    'Calendrier',
-                                    style: kHomeButtonText,
-                                  ),
-                                ],
+                              decoration: BoxDecoration(
+                                color: kWhiteColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
+                              ),
+                              child: const Text(
+                                'Mode lecture seule - Créez un compte pour interagir',
+                                style: TextStyle(
+                                  color: kWhiteColor,
+                                  fontSize: kHomeGuestModeFontSize,
+                                  fontFamily: 'Avenir',
+                                ),
                               ),
                             ),
-                          ),
-                          
-                          // Bouton Annonce
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, AnnoncesScreen.routeName);
-                            },
-                            child: Container(
-                              height: kHomeButtonHeight,
-                              decoration: BoxDecoration(
-                                gradient: kAnnouncementButtonGradient,
-                                borderRadius: BorderRadius.circular(kHomeButtonBorderRadius),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.announcement_outlined,
-                                    color: kWhiteColor,
-                                    size: kHomeButtonIconSize,
-                                  ),
-                                  const SizedBox(height: kSmallSpace),
-                                  Text(
-                                    'Annonce',
-                                    style: kHomeButtonText,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          // Bouton Événement
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, EvenementsScreen.routeName);
-                            },
-                            child: Container(
-                              height: kHomeButtonHeight,
-                              decoration: BoxDecoration(
-                                gradient: kEventButtonGradient,
-                                borderRadius: BorderRadius.circular(kHomeButtonBorderRadius),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.event_available_outlined,
-                                    color: kWhiteColor,
-                                    size: kHomeButtonIconSize,
-                                  ),
-                                  const SizedBox(height: kSmallSpace),
-                                  Text(
-                                    'Evenement',
-                                    style: kHomeButtonText,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          // Bouton Clubs
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, ClubsScreen.routeName);
-                            },
-                            child: Container(
-                              height: kHomeButtonHeight,
-                              decoration: BoxDecoration(
-                                gradient: kClubsButtonGradient,
-                                borderRadius: BorderRadius.circular(kHomeButtonBorderRadius),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.school_outlined,
-                                    color: kWhiteColor,
-                                    size: kHomeButtonIconSize,
-                                  ),
-                                  const SizedBox(height: kSmallSpace),
-                                  Text(
-                                    'Clubs',
-                                    style: kHomeButtonText,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          ],
                         ],
                       ),
-                    ),
+                      ),
+                      
+                      // Espacement après le message
+                      const SizedBox(height: kSpacingAfterGreeting),
+                      
+                      // Grille de statistiques
+                      Expanded(
+                        child: _buildStatisticsGrid(),
+                      ),
                   ],
                 ),
               ),
@@ -235,23 +138,146 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 
-  /// Gère la déconnexion de l'utilisateur
-  /// Déconnecte l'utilisateur puis navigue vers l'écran de connexion
-  Future<void> _gererDeconnexion(BuildContext context) async {
-    // Déconnecte l'utilisateur
-    await FirebaseAuthService.signOut();
-    
-    // Vérifie que le contexte est toujours valide avant de naviguer
-    if (context.mounted) {
-      // Navigue vers l'écran de connexion et supprime tous les écrans précédents
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        LoginScreen.routeName,
-        (route) => false,
-      );
-    }
+
+  /// Construit la grille de statistiques avec gestion optimisée des streams
+  Widget _buildStatisticsGrid() {
+    return StreamBuilder<int>(
+      stream: HomeController.obtenirNombreCoursStream(),
+      builder: (context, coursSnapshot) {
+        return StreamBuilder<int>(
+          stream: HomeController.obtenirNombreAnnoncesStream(),
+          builder: (context, annoncesSnapshot) {
+            return StreamBuilder<int>(
+              stream: HomeController.obtenirNombreEvenementsStream(),
+              builder: (context, evenementsSnapshot) {
+                return StreamBuilder<int>(
+                  stream: HomeController.obtenirNombreClubsStream(),
+                  builder: (context, clubsSnapshot) {
+                    // Vérifier l'état de connexion de tous les streams
+                    final allWaiting = coursSnapshot.connectionState == ConnectionState.waiting ||
+                        annoncesSnapshot.connectionState == ConnectionState.waiting ||
+                        evenementsSnapshot.connectionState == ConnectionState.waiting ||
+                        clubsSnapshot.connectionState == ConnectionState.waiting;
+
+                    // Vérifier les erreurs
+                    final hasError = coursSnapshot.hasError ||
+                        annoncesSnapshot.hasError ||
+                        evenementsSnapshot.hasError ||
+                        clubsSnapshot.hasError;
+
+                    if (allWaiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: kWhiteColor,
+                        ),
+                      );
+                    }
+
+                    if (hasError) {
+                      return Center(
+                        child: Text(
+                          'Erreur de chargement',
+                          style: kHomeButtonText,
+                        ),
+                      );
+                    }
+
+                    // Utiliser les valeurs ou 0 par défaut
+                    final nombreCours = coursSnapshot.data ?? 0;
+                    final nombreAnnonces = annoncesSnapshot.data ?? 0;
+                    final nombreEvenements = evenementsSnapshot.data ?? 0;
+                    final nombreClubs = clubsSnapshot.data ?? 0;
+
+                    return GridView.count(
+                      crossAxisCount: kHomeGridCrossAxisCount,
+                      crossAxisSpacing: kSpacingBetweenButtons,
+                      mainAxisSpacing: kSpacingBetweenButtons,
+                      children: [
+                        // Statistique Calendrier
+                        _buildStatCard(
+                          gradient: kCalendarButtonGradient,
+                          icon: Icons.calendar_today_outlined,
+                          label: 'Calendrier',
+                          count: nombreCours,
+                        ),
+                        
+                        // Statistique Annonce
+                        _buildStatCard(
+                          gradient: kAnnouncementButtonGradient,
+                          icon: Icons.announcement_outlined,
+                          label: 'Annonce',
+                          count: nombreAnnonces,
+                        ),
+                        
+                        // Statistique Événement
+                        _buildStatCard(
+                          gradient: kEventButtonGradient,
+                          icon: Icons.event_available_outlined,
+                          label: 'Evenement',
+                          count: nombreEvenements,
+                        ),
+                        
+                        // Statistique Clubs
+                        _buildStatCard(
+                          gradient: kClubsButtonGradient,
+                          icon: Icons.school_outlined,
+                          label: 'Clubs',
+                          count: nombreClubs,
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Construit une carte de statistique
+  Widget _buildStatCard({
+    required LinearGradient gradient,
+    required IconData icon,
+    required String label,
+    required int count,
+  }) {
+    return Container(
+      height: kHomeButtonHeight,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(kHomeButtonBorderRadius),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: kWhiteColor,
+            size: kHomeButtonIconSize,
+          ),
+          const SizedBox(height: kSmallSpace),
+          Text(
+            count.toString(),
+            style: kHomeButtonText.copyWith(
+              fontSize: kHomeStatCardCountFontSize,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: kHomeStatCardSpacing),
+          Text(
+            label,
+            style: kHomeButtonText.copyWith(
+              fontSize: kHomeStatCardLabelFontSize,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -46,7 +46,33 @@ class _CarouselState extends State<Carousel> {
                 padding: const EdgeInsets.symmetric(
                   horizontal: kPaddingHorizontalL,
                 ),
-                child: Text(_items[i], style: kCarouselText, textAlign: TextAlign.center,),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Text(_items[i], style: kCarouselText, textAlign: TextAlign.center,),
+                ),
+                ),
               );
             },
             onPageChanged: (i) {

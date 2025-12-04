@@ -4,8 +4,9 @@ import '../styles/colors.dart';
 import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
-import '../services/firebase_firestore.dart';
+import '../controllers/club_controller.dart';
 import '../models/club.dart';
+import '../utils/guest_utils.dart';
 import 'CreerClubScreen.dart';
 import 'ClubDetailScreen.dart';
 
@@ -37,14 +38,14 @@ class ClubsScreen extends StatelessWidget {
     );
   }
 
-  /// Construit l'en-tête avec bouton retour, titre et bouton ajouter
+  /// Construit l'en-tête avec titre et bouton ajouter
   Widget _construireEnTete(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(kHorizontalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _construireBoutonRetour(context),
+          const SizedBox(width: kBackButtonSize), // Espace pour équilibrer le layout
           const Text('Clubs', style: kClubsScreenTitleText),
           _construireBoutonAjouter(context),
         ],
@@ -52,38 +53,22 @@ class ClubsScreen extends StatelessWidget {
     );
   }
 
-  /// Construit le bouton retour
-  Widget _construireBoutonRetour(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-      },
-      child: Container(
-        width: kBackButtonSize,
-        height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.arrow_back, color: Colors.black),
-      ),
-    );
-  }
-
   /// Construit le bouton ajouter
   Widget _construireBoutonAjouter(BuildContext context) {
+    final style = getGuestButtonStyle();
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, CreerClubScreen.routeName);
-      },
+      onTap: () => handleGuestAction(
+        context,
+        () => Navigator.pushNamed(context, CreerClubScreen.routeName),
+      ),
       child: Container(
         width: kBackButtonSize,
         height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
+        decoration: BoxDecoration(
+          color: kWhiteColor.withOpacity(style['opacity'] as double),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.add, color: Colors.black),
+        child: Icon(Icons.add, color: style['color'] as Color),
       ),
     );
   }
@@ -91,8 +76,8 @@ class ClubsScreen extends StatelessWidget {
   /// Construit la liste des clubs
   Widget _construireListeClubs() {
     return Expanded(
-      child: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: FirebaseFirestoreService.obtenirTousLesClubs(),
+      child: StreamBuilder<List<Club>>(
+        stream: ClubController.obtenirTousLesClubsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -124,8 +109,7 @@ class ClubsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: kHorizontalPadding),
             itemCount: clubs.length,
             itemBuilder: (context, index) {
-              final club = Club.fromFirestore(clubs[index], clubs[index]['id']);
-              return _construireCarteClub(context, club);
+              return _construireCarteClub(context, clubs[index]);
             },
           );
         },

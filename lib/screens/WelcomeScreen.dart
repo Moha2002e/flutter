@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projectexamen/l10n/app_localizations.dart';
 import 'package:projectexamen/screens/LoginScreen.dart';
 import 'package:projectexamen/screens/RegisterScreen.dart';
+import 'package:projectexamen/screens/main_navigation_screen.dart';
 
 import 'package:projectexamen/styles/sizes.dart';
 import 'package:projectexamen/styles/colors.dart';
@@ -10,6 +11,7 @@ import 'package:projectexamen/styles/spacings.dart';
 import '../styles/images.dart';
 import '../widgets/carousel.dart';
 import '../widgets/main_button.dart';
+import '../utils/guest_utils.dart';
 
 /// Écran d'accueil de l'application
 /// Affiche le logo, un carousel et des boutons pour s'inscrire ou se connecter
@@ -92,7 +94,12 @@ class WelcomeScreen extends StatelessWidget {
               // Lien pour continuer sans compte
               GestureDetector(
                 onTap: () {
-                  // TODO: Implémenter la navigation sans compte
+                  enableGuestMode();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    MainNavigationScreen.routeName,
+                    (route) => false,
+                  );
                 },
                 child: Text(
                   AppLocalizations.of(context)!.withoutAccount,

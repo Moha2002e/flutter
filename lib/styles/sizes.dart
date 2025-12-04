@@ -133,3 +133,23 @@ const double kEvenementDetailCardTitleFontSize = 20.0;
 const double kEvenementDetailDescriptionFontSize = 16.0;
 const double kEvenementDetailInfoFontSize = 16.0;
 const double kEvenementDetailCardTitleTopPadding = 8.0;
+
+// Tailles spécifiques pour InfoSlider
+const double kInfoSliderHeight = 105.0;
+
+// Tailles spécifiques pour HomeScreen (magic numbers corrigés)
+const double kHomeStatCardCountFontSize = 36.0;
+const double kHomeStatCardLabelFontSize = 14.0;
+const double kHomeStatCardSpacing = 4.0;
+const double kHomeGuestModeFontSize = 12.0;
+
+// Tailles spécifiques pour BottomNavBar
+const double kBottomNavBarSelectedFontSize = 12.0;
+const double kBottomNavBarUnselectedFontSize = 12.0;
+const double kBottomNavBarIconSize = 24.0;
+
+// Tailles spécifiques pour DetailScreens (hauteur max)
+const double kDetailScreenMaxHeightRatio = 0.65;
+
+// Tailles spécifiques pour DetailScreens (fontSize)
+const double kDetailScreenInfoFontSize = 14.0;

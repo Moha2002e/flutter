@@ -4,8 +4,9 @@ import '../styles/colors.dart';
 import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
-import '../services/firebase_firestore.dart';
+import '../controllers/cours_controller.dart';
 import '../models/cours.dart';
+import '../utils/guest_utils.dart';
 import 'CreerCoursScreen.dart';
 import 'CoursDetailScreen.dart';
 
@@ -37,14 +38,14 @@ class CalendrierScreen extends StatelessWidget {
     );
   }
 
-  /// Construit l'en-tête avec bouton retour, titre et bouton ajouter
+  /// Construit l'en-tête avec titre et bouton ajouter
   Widget _construireEnTete(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(kHorizontalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _construireBoutonRetour(context),
+          const SizedBox(width: kBackButtonSize), // Espace pour équilibrer le layout
           const Text('Calendrier', style: kCalendrierScreenTitleText),
           _construireBoutonAjouter(context),
         ],
@@ -52,38 +53,22 @@ class CalendrierScreen extends StatelessWidget {
     );
   }
 
-  /// Construit le bouton retour
-  Widget _construireBoutonRetour(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-      },
-      child: Container(
-        width: kBackButtonSize,
-        height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.arrow_back, color: Colors.black),
-      ),
-    );
-  }
-
   /// Construit le bouton ajouter
   Widget _construireBoutonAjouter(BuildContext context) {
+    final style = getGuestButtonStyle();
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, CreerCoursScreen.routeName);
-      },
+      onTap: () => handleGuestAction(
+        context,
+        () => Navigator.pushNamed(context, CreerCoursScreen.routeName),
+      ),
       child: Container(
         width: kBackButtonSize,
         height: kBackButtonSize,
-        decoration: const BoxDecoration(
-          color: kWhiteColor,
+        decoration: BoxDecoration(
+          color: kWhiteColor.withOpacity(style['opacity'] as double),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.add, color: Colors.black),
+        child: Icon(Icons.add, color: style['color'] as Color),
       ),
     );
   }
@@ -91,8 +76,8 @@ class CalendrierScreen extends StatelessWidget {
   /// Construit la liste des cours
   Widget _construireListeCours() {
     return Expanded(
-      child: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: FirebaseFirestoreService.obtenirTousLesCours(),
+      child: StreamBuilder<List<Cours>>(
+        stream: CoursController.obtenirTousLesCoursStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -124,8 +109,7 @@ class CalendrierScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: kHorizontalPadding),
             itemCount: cours.length,
             itemBuilder: (context, index) {
-              final coursItem = Cours.fromFirestore(cours[index], cours[index]['id']);
-              return _construireCarteCours(context, coursItem);
+              return _construireCarteCours(context, cours[index]);
             },
           );
         },

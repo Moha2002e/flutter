@@ -5,9 +5,11 @@ import '../styles/colors.dart';
 import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
-import '../services/firebase_firestore.dart';
 import '../services/firebase_auth.dart';
 import '../models/club.dart';
+import '../utils/guest_utils.dart';
+import '../controllers/club_controller.dart';
+import 'ModifierClubScreen.dart';
 
 /// Écran de détails d'un club
 class ClubDetailScreen extends StatefulWidget {
@@ -35,69 +37,43 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
   Future<void> _verifierMembre() async {
     final utilisateur = FirebaseAuthService.currentUser;
     if (utilisateur != null) {
-      final estMembre = await FirebaseFirestoreService.estMembre(
-        clubId: widget.clubId,
-        userId: utilisateur.uid,
+      final estMembre = await ClubController.checkMembership(
+        widget.clubId,
+        utilisateur.uid,
       );
       if (mounted) {
-        setState(() {
-          _estMembre = estMembre;
-        });
+        setState(() => _estMembre = estMembre);
       }
     }
   }
 
   /// Gère l'adhésion ou le départ du club
   Future<void> _gererAdhesion() async {
-    final utilisateur = FirebaseAuthService.currentUser;
-    if (utilisateur == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vous devez être connecté')),
-      );
+    if (isGuest()) {
+      showGuestMessage(context);
       return;
     }
+    
+    final utilisateur = FirebaseAuthService.currentUser;
+    if (utilisateur == null) return;
 
-    setState(() {
-      _enChargement = true;
-    });
-
-    try {
-      if (_estMembre == true) {
-        await FirebaseFirestoreService.quitterClub(
-          clubId: widget.clubId,
-          userId: utilisateur.uid,
-        );
+    await ClubController.toggleMembership(
+      context: context,
+      clubId: widget.clubId,
+      isMember: _estMembre == true,
+      setLoading: (loading) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous avez quitté le club')),
-          );
+          setState(() => _enChargement = loading);
         }
-      } else {
-        await FirebaseFirestoreService.rejoindreClub(
-          clubId: widget.clubId,
-          userId: utilisateur.uid,
-        );
+      },
+      setMemberStatus: (isMember) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous avez rejoint le club')),
-          );
+          setState(() => _estMembre = isMember);
         }
-      }
-      
-      await _verifierMembre();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _enChargement = false;
-        });
-      }
-    }
+      },
+    );
+    
+    await _verifierMembre();
   }
 
   @override
@@ -111,19 +87,8 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
             gradient: kBackgroundGradient,
           ),
           child: SafeArea(
-            child: StreamBuilder<Map<String, dynamic>?>(
-              stream: FirebaseFirestoreService.clubsCollection
-                  .doc(widget.clubId)
-                  .snapshots()
-                  .map((doc) {
-                if (doc.exists) {
-                  return {
-                    'id': doc.id,
-                    ...doc.data() as Map<String, dynamic>,
-                  };
-                }
-                return null;
-              }),
+            child: StreamBuilder<Club?>(
+              stream: ClubController.obtenirClubParIdStream(widget.clubId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -135,13 +100,15 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                   return _construireErreur();
                 }
 
-                final club = Club.fromFirestore(snapshot.data!, snapshot.data!['id']);
+                final club = snapshot.data!;
+                final utilisateurConnecte = utilisateur != null && !isGuest();
+                final estCreateur = utilisateur != null && club.createurId == utilisateur.uid;
 
                 return Column(
                   children: [
                     _construireEnTete(club.nom),
                     const SizedBox(height: kSpacingAfterHeader),
-                    _construireCarteClub(club, utilisateur != null),
+                    _construireCarteClub(club, utilisateurConnecte, estCreateur),
                   ],
                 );
               },
@@ -183,24 +150,32 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
   }
 
   /// Construit la carte blanche avec le contenu du club
-  Widget _construireCarteClub(Club club, bool utilisateurConnecte) {
-    return Expanded(
+  Widget _construireCarteClub(Club club, bool utilisateurConnecte, bool estCreateur) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * kDetailScreenMaxHeightRatio,
+      ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: kHorizontalPadding),
         decoration: BoxDecoration(
           color: kWhiteColor,
           borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
         ),
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(kInputFieldPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               _construireSectionImageEtNom(club.nom),
               const SizedBox(height: kSpacingBetweenFields),
               _construireDescription(club.description),
               const SizedBox(height: kSpacingBeforeButton),
-              if (utilisateurConnecte) _construireBoutonAction(),
+              if (estCreateur) ...[
+                _construireBoutonsModifierSupprimer(club),
+                const SizedBox(height: kSpacingBetweenFields),
+              ],
+              if (utilisateurConnecte && !estCreateur) _construireBoutonAction(),
             ],
           ),
         ),
@@ -239,10 +214,47 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
 
   /// Construit la description du club
   Widget _construireDescription(String description) {
-    return Expanded(
-      child: SingleChildScrollView(
-        child: Text(description, style: kClubDetailDescriptionText),
-      ),
+    return Text(description, style: kClubDetailDescriptionText);
+  }
+
+  /// Construit les boutons Modifier et Supprimer (pour le créateur)
+  Widget _construireBoutonsModifierSupprimer(Club club) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _enChargement ? null : () => _modifierClub(club),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kMainButtonColor,
+              foregroundColor: kWhiteColor,
+              padding: const EdgeInsets.symmetric(vertical: kInputFieldPadding),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
+              ),
+            ),
+            child: _enChargement
+                ? const CircularProgressIndicator(color: kWhiteColor)
+                : const Text('Modifier', style: kClubDetailButtonText),
+          ),
+        ),
+        const SizedBox(width: kSpacingBetweenFields),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _enChargement ? null : () => _supprimerClub(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: kWhiteColor,
+              padding: const EdgeInsets.symmetric(vertical: kInputFieldPadding),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
+              ),
+            ),
+            child: _enChargement
+                ? const CircularProgressIndicator(color: kWhiteColor)
+                : const Text('Supprimer', style: kClubDetailButtonText),
+          ),
+        ),
+      ],
     );
   }
 
@@ -270,6 +282,53 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
         ),
       ),
     );
+  }
+
+  /// Modifie le club
+  Future<void> _modifierClub(Club club) async {
+    final result = await Navigator.pushNamed(
+      context,
+      ModifierClubScreen.routeName,
+      arguments: club,
+    );
+    if (result == true && mounted) {
+      // Rafraîchir l'écran si modification réussie
+      setState(() {});
+    }
+  }
+
+  /// Supprime le club
+  Future<void> _supprimerClub() async {
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmer la suppression'),
+        content: const Text('Êtes-vous sûr de vouloir supprimer ce club ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer == true) {
+      final success = await ClubController.deleteClub(
+        context: context,
+        clubId: widget.clubId,
+        setLoading: (loading) {
+          if (mounted) setState(() => _enChargement = loading);
+        },
+      );
+      if (success && mounted) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   /// Construit l'affichage d'erreur

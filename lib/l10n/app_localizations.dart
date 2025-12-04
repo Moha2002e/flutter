@@ -119,25 +119,25 @@ abstract class AppLocalizations {
   /// No description provided for @carousel1.
   ///
   /// In en, this message translates to:
-  /// **'Manage your budget!'**
+  /// **'Join clubs and share your passions!'**
   String get carousel1;
 
   /// No description provided for @carousel2.
   ///
   /// In en, this message translates to:
-  /// **'Keep control of your daily expenses.'**
+  /// **'Discover campus events and participate.'**
   String get carousel2;
 
   /// No description provided for @carousel3.
   ///
   /// In en, this message translates to:
-  /// **'Easily split costs with friends or family.'**
+  /// **'Browse announcements and find what you need.'**
   String get carousel3;
 
   /// No description provided for @carousel4.
   ///
   /// In en, this message translates to:
-  /// **'Track your savings and reach your financial goals.'**
+  /// **'Manage your calendar and never miss a class.'**
   String get carousel4;
 
   /// No description provided for @mail.

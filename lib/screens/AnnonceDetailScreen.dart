@@ -5,16 +5,25 @@ import '../styles/colors.dart';
 import '../styles/sizes.dart';
 import '../styles/spacings.dart';
 import '../styles/texts.dart';
-import '../services/firebase_firestore.dart';
+import '../services/firebase_auth.dart';
 import '../models/annonce.dart';
+import '../controllers/annonce_controller.dart';
+import 'ModifierAnnonceScreen.dart';
 
 /// Écran de détails d'une annonce
-class AnnonceDetailScreen extends StatelessWidget {
+class AnnonceDetailScreen extends StatefulWidget {
   const AnnonceDetailScreen({super.key, required this.annonceId});
 
   final String annonceId;
 
   static const String routeName = '/annonce-detail';
+
+  @override
+  State<AnnonceDetailScreen> createState() => _AnnonceDetailScreenState();
+}
+
+class _AnnonceDetailScreenState extends State<AnnonceDetailScreen> {
+  bool _enChargement = false;
 
   @override
   Widget build(BuildContext context) {
@@ -25,19 +34,8 @@ class AnnonceDetailScreen extends StatelessWidget {
             gradient: kBackgroundGradient,
           ),
           child: SafeArea(
-            child: StreamBuilder<Map<String, dynamic>?>(
-              stream: FirebaseFirestoreService.annoncesCollection
-                  .doc(annonceId)
-                  .snapshots()
-                  .map((doc) {
-                if (doc.exists) {
-                  return {
-                    'id': doc.id,
-                    ...doc.data() as Map<String, dynamic>,
-                  };
-                }
-                return null;
-              }),
+            child: StreamBuilder<Annonce?>(
+              stream: AnnonceController.obtenirAnnonceParIdStream(widget.annonceId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -49,13 +47,15 @@ class AnnonceDetailScreen extends StatelessWidget {
                   return _construireErreur(context);
                 }
 
-                final annonce = Annonce.fromFirestore(snapshot.data!, snapshot.data!['id']);
+                final annonce = snapshot.data!;
+                final utilisateur = FirebaseAuthService.currentUser;
+                final estCreateur = utilisateur != null && annonce.createurId == utilisateur.uid;
 
                 return Column(
                   children: [
                     _construireEnTete(context, annonce.nom),
                     const SizedBox(height: kSpacingAfterHeader),
-                    _construireCarteAnnonce(annonce),
+                    _construireCarteAnnonce(annonce, estCreateur),
                   ],
                 );
               },
@@ -97,29 +97,124 @@ class AnnonceDetailScreen extends StatelessWidget {
   }
 
   /// Construit la carte blanche avec le contenu de l'annonce
-  Widget _construireCarteAnnonce(Annonce annonce) {
-    return Expanded(
+  Widget _construireCarteAnnonce(Annonce annonce, bool estCreateur) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * kDetailScreenMaxHeightRatio,
+      ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: kHorizontalPadding),
         decoration: BoxDecoration(
           color: kWhiteColor,
           borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
         ),
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(kInputFieldPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               _construireSectionImageEtNom(annonce.nom),
               const SizedBox(height: kSpacingBetweenFields),
               _construireInfosAnnonce(annonce),
               const SizedBox(height: kSpacingBetweenFields),
               _construireDescription(annonce.description),
+              if (estCreateur) ...[
+                const SizedBox(height: kSpacingBeforeButton),
+                _construireBoutonsModifierSupprimer(annonce),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Construit les boutons Modifier et Supprimer
+  Widget _construireBoutonsModifierSupprimer(Annonce annonce) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _enChargement ? null : () => _modifierAnnonce(annonce),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kMainButtonColor,
+              foregroundColor: kWhiteColor,
+              padding: const EdgeInsets.symmetric(vertical: kInputFieldPadding),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
+              ),
+            ),
+            child: _enChargement
+                ? const CircularProgressIndicator(color: kWhiteColor)
+                : const Text('Modifier', style: kAnnonceDetailInfoText),
+          ),
+        ),
+        const SizedBox(width: kSpacingBetweenFields),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _enChargement ? null : () => _supprimerAnnonce(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: kWhiteColor,
+              padding: const EdgeInsets.symmetric(vertical: kInputFieldPadding),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(kInputFieldBorderRadius),
+              ),
+            ),
+            child: _enChargement
+                ? const CircularProgressIndicator(color: kWhiteColor)
+                : const Text('Supprimer', style: kAnnonceDetailInfoText),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Modifie l'annonce
+  Future<void> _modifierAnnonce(Annonce annonce) async {
+    final result = await Navigator.pushNamed(
+      context,
+      ModifierAnnonceScreen.routeName,
+      arguments: annonce,
+    );
+    if (result == true && mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Supprime l'annonce
+  Future<void> _supprimerAnnonce() async {
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmer la suppression'),
+        content: const Text('Êtes-vous sûr de vouloir supprimer cette annonce ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer == true) {
+      final success = await AnnonceController.deleteAnnonce(
+        context: context,
+        annonceId: widget.annonceId,
+        setLoading: (loading) {
+          if (mounted) setState(() => _enChargement = loading);
+        },
+      );
+      if (success && mounted) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   /// Construit la section avec l'image et le nom de l'annonce
@@ -170,8 +265,8 @@ class AnnonceDetailScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14.0,
+          style: TextStyle(
+            fontSize: kDetailScreenInfoFontSize,
             fontFamily: 'Avenir',
             fontWeight: FontWeight.bold,
             color: Colors.black54,
@@ -185,25 +280,21 @@ class AnnonceDetailScreen extends StatelessWidget {
 
   /// Construit la description de l'annonce
   Widget _construireDescription(String description) {
-    return Expanded(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Description',
-              style: TextStyle(
-                fontSize: 14.0,
-                fontFamily: 'Avenir',
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: kSpacingBetweenLabelAndField),
-            Text(description, style: kAnnonceDetailDescriptionText),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Description',
+          style: TextStyle(
+            fontSize: 14.0,
+            fontFamily: 'Avenir',
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
         ),
-      ),
+        const SizedBox(height: kSpacingBetweenLabelAndField),
+        Text(description, style: kAnnonceDetailDescriptionText),
+      ],
     );
   }
 

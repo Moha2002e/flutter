@@ -18,16 +18,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get withoutAccount => 'Continue without an account';
 
   @override
-  String get carousel1 => 'Manage your budget!';
+  String get carousel1 => 'Join clubs and share your passions!';
 
   @override
-  String get carousel2 => 'Keep control of your daily expenses.';
+  String get carousel2 => 'Discover campus events and participate.';
 
   @override
-  String get carousel3 => 'Easily split costs with friends or family.';
+  String get carousel3 => 'Browse announcements and find what you need.';
 
   @override
-  String get carousel4 => 'Track your savings and reach your financial goals.';
+  String get carousel4 => 'Manage your calendar and never miss a class.';
 
   @override
   String get mail => 'Email address';

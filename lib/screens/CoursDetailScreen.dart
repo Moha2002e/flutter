@@ -8,6 +8,7 @@ import '../styles/texts.dart';
 import '../services/firebase_auth.dart';
 import '../models/cours.dart';
 import '../controllers/cours_controller.dart';
+import 'ModifierCoursScreen.dart';
 
 /// Écran de détails d'un cours
 class CoursDetailScreen extends StatefulWidget {
@@ -170,9 +171,10 @@ class _CoursDetailScreenState extends State<CoursDetailScreen> {
 
   /// Modifie le cours
   Future<void> _modifierCours(Cours cours) async {
-    // TODO: Créer ModifierCoursScreen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fonctionnalité à venir')),
+    Navigator.pushNamed(
+      context,
+      ModifierCoursScreen.routeName,
+      arguments: cours,
     );
   }
 

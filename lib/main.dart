@@ -22,6 +22,8 @@ import 'package:projectexamen/screens/AnnonceDetailScreen.dart';
 import 'package:projectexamen/screens/EvenementDetailScreen.dart';
 import 'package:projectexamen/screens/ModifierClubScreen.dart';
 import 'package:projectexamen/screens/ModifierAnnonceScreen.dart';
+import 'package:projectexamen/screens/ModifierEvenementScreen.dart';
+import 'package:projectexamen/screens/ModifierCoursScreen.dart';
 import 'package:projectexamen/services/notification_service.dart';
 
 void main() async {
@@ -79,6 +81,8 @@ class MyApp extends StatelessWidget {
         CreerCoursScreen.routeName: (context) => const CreerCoursScreen(),
         ModifierClubScreen.routeName: (context) => const ModifierClubScreen(),
         ModifierAnnonceScreen.routeName: (context) => const ModifierAnnonceScreen(),
+        ModifierEvenementScreen.routeName: (context) => const ModifierEvenementScreen(),
+        ModifierCoursScreen.routeName: (context) => const ModifierCoursScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == ClubDetailScreen.routeName) {
@@ -99,6 +103,20 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(
             builder: (context) => ModifierAnnonceScreen(),
             settings: RouteSettings(arguments: annonce),
+          );
+        }
+        if (settings.name == ModifierEvenementScreen.routeName) {
+          final evenement = settings.arguments as dynamic;
+          return MaterialPageRoute(
+            builder: (context) => ModifierEvenementScreen(),
+            settings: RouteSettings(arguments: evenement),
+          );
+        }
+        if (settings.name == ModifierCoursScreen.routeName) {
+          final cours = settings.arguments as dynamic;
+          return MaterialPageRoute(
+            builder: (context) => ModifierCoursScreen(),
+            settings: RouteSettings(arguments: cours),
           );
         }
         if (settings.name == CoursDetailScreen.routeName) {

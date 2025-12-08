@@ -8,6 +8,7 @@ import '../styles/texts.dart';
 import '../services/firebase_auth.dart';
 import '../models/evenement.dart';
 import '../controllers/evenement_controller.dart';
+import 'ModifierEvenementScreen.dart';
 
 /// Écran de détails d'un événement
 class EvenementDetailScreen extends StatefulWidget {
@@ -172,9 +173,10 @@ class _EvenementDetailScreenState extends State<EvenementDetailScreen> {
 
   /// Modifie l'événement
   Future<void> _modifierEvenement(Evenement evenement) async {
-    // TODO: Créer ModifierEvenementScreen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fonctionnalité à venir')),
+    Navigator.pushNamed(
+      context,
+      ModifierEvenementScreen.routeName,
+      arguments: evenement,
     );
   }
 

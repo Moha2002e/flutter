@@ -9,9 +9,12 @@ service cloud.firestore {
       // Seuls les utilisateurs authentifiés peuvent créer des clubs
       allow create: if request.auth != null;
       
-      // Seul le créateur peut modifier le club
-      allow update: if request.auth != null && 
-                       request.resource.data.createurId == request.auth.uid;
+      // Seul le créateur peut modifier tout le club.
+      // Tout utilisateur authentifié peut modifier UNIQUEMENT 'nombreMembres' (pour rejoindre/quitter).
+      allow update: if request.auth != null && (
+        request.resource.data.createurId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombreMembres'])
+      );
       
       // Seul le créateur peut supprimer le club
       allow delete: if request.auth != null && 

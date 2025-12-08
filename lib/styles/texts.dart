@@ -81,6 +81,12 @@ const TextStyle kInputText = TextStyle(
   fontFamily: 'Avenir',
 );
 
+const TextStyle kInputTextStyle = TextStyle(
+  color: Colors.black,
+  fontSize: kInputFontSize,
+  fontFamily: 'Avenir',
+);
+
 const TextStyle kLinkText = TextStyle(
   color: kWhiteColor,
   fontSize: kLinkFontSize,

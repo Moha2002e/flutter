@@ -1,60 +1,99 @@
+// Import du package Flutter pour les widgets Material Design
 import 'package:flutter/material.dart';
+// Import de Cloud Firestore pour les types de données Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Import des styles de couleurs utilisés dans l'application
 import '../styles/colors.dart';
+// Import des constantes de tailles (dimensions, espacements)
 import '../styles/sizes.dart';
+// Import des constantes d'espacement entre les éléments
 import '../styles/spacings.dart';
+// Import des styles de texte prédéfinis
 import '../styles/texts.dart';
+// Import du service d'authentification Firebase
 import '../services/firebase_auth.dart';
+// Import du modèle Cours pour typer les données
 import '../models/cours.dart';
+// Import du contrôleur pour gérer les opérations sur les cours
 import '../controllers/cours_controller.dart';
+// Import de l'écran de modification de cours
 import 'ModifierCoursScreen.dart';
 
 /// Écran de détails d'un cours
+/// Affiche toutes les informations d'un cours et permet de le modifier ou supprimer si l'utilisateur est le créateur
 class CoursDetailScreen extends StatefulWidget {
+  // Constructeur avec l'ID du cours requis
   const CoursDetailScreen({super.key, required this.coursId});
 
+  // ID du cours à afficher
   final String coursId;
 
+  // Nom de la route pour la navigation
   static const String routeName = '/cours-detail';
 
+  // Crée l'état associé à ce widget
   @override
   State<CoursDetailScreen> createState() => _CoursDetailScreenState();
 }
 
+// Classe d'état privée pour gérer l'état de l'écran
 class _CoursDetailScreenState extends State<CoursDetailScreen> {
+  // Variable d'état pour indiquer si une opération est en cours
   bool _enChargement = false;
 
+  // Méthode build qui construit l'interface utilisateur
   @override
   Widget build(BuildContext context) {
+    // Retourne un Scaffold qui est la structure de base d'un écran Material Design
     return Scaffold(
+      // Corps de l'écran
       body: SizedBox.expand(
+        // Widget qui prend toute la taille disponible
         child: DecoratedBox(
+          // Décorateur pour appliquer un dégradé de fond
           decoration: const BoxDecoration(
+            // Application du dégradé de fond défini dans les styles
             gradient: kBackgroundGradient,
           ),
+          // Zone sécurisée qui évite les zones système (notch, barre de statut)
           child: SafeArea(
+            // StreamBuilder qui écoute les changements du cours en temps réel
             child: StreamBuilder<Cours?>(
+              // Stream qui émet le cours depuis Firestore selon son ID
               stream: CoursController.obtenirCoursParIdStream(widget.coursId),
+              // Builder qui construit l'UI selon l'état du stream
               builder: (context, snapshot) {
+                // Si les données sont en cours de chargement
                 if (snapshot.connectionState == ConnectionState.waiting) {
+                  // Affiche un indicateur de chargement centré
                   return const Center(
+                    // Indicateur circulaire de progression en blanc
                     child: CircularProgressIndicator(color: kWhiteColor),
                   );
                 }
 
+                // Si une erreur est survenue ou le cours n'existe pas
                 if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                  // Affiche l'écran d'erreur
                   return _construireErreur(context);
                 }
 
+                // Récupère le cours depuis les données du snapshot
                 final cours = snapshot.data!;
+                // Récupère l'utilisateur actuellement connecté
                 final utilisateur = FirebaseAuthService.currentUser;
+                // Vérifie si l'utilisateur connecté est le créateur du cours
                 final estCreateur = utilisateur != null && cours.createurId == utilisateur.uid;
 
+                // Retourne une colonne avec l'en-tête et la carte du cours
                 return Column(
                   children: [
+                    // Construction de l'en-tête avec bouton retour et titre
                     _construireEnTete(context, cours.nom),
+                    // Espacement vertical après l'en-tête
                     const SizedBox(height: kSpacingAfterHeader),
+                    // Construction de la carte avec le contenu du cours
                     _construireCarteCours(cours, estCreateur),
                   ],
                 );

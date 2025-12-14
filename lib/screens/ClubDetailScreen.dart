@@ -1,78 +1,125 @@
+// Import du package Flutter pour les widgets Material Design
 import 'package:flutter/material.dart';
+// Import de Cloud Firestore pour les types de données Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Import des styles de couleurs utilisés dans l'application
 import '../styles/colors.dart';
+// Import des constantes de tailles (dimensions, espacements)
 import '../styles/sizes.dart';
+// Import des constantes d'espacement entre les éléments
 import '../styles/spacings.dart';
+// Import des styles de texte prédéfinis
 import '../styles/texts.dart';
+// Import du service d'authentification Firebase
 import '../services/firebase_auth.dart';
+// Import du modèle Club pour typer les données
 import '../models/club.dart';
+// Import des utilitaires pour gérer le mode invité
 import '../utils/guest_utils.dart';
+// Import du contrôleur pour gérer les opérations sur les clubs
 import '../controllers/club_controller.dart';
+// Import de l'écran de modification de club
 import 'ModifierClubScreen.dart';
 
 /// Écran de détails d'un club
+/// Affiche toutes les informations d'un club et permet de le rejoindre/quitter, modifier ou supprimer si l'utilisateur est le créateur
 class ClubDetailScreen extends StatefulWidget {
+  // Constructeur avec l'ID du club requis
   const ClubDetailScreen({super.key, required this.clubId});
 
+  // ID du club à afficher
   final String clubId;
 
+  // Nom de la route pour la navigation
   static const String routeName = '/club-detail';
 
+  // Crée l'état associé à ce widget
   @override
   State<ClubDetailScreen> createState() => _ClubDetailScreenState();
 }
 
+// Classe d'état privée pour gérer l'état de l'écran
 class _ClubDetailScreenState extends State<ClubDetailScreen> {
+  // Variable d'état pour indiquer si une opération est en cours
   bool _enChargement = false;
+  // Variable d'état pour indiquer si l'utilisateur est membre du club (null = non vérifié)
   bool? _estMembre;
 
+  // Méthode appelée lors de l'initialisation du widget
   @override
   void initState() {
+    // Appelle la méthode initState de la classe parente
     super.initState();
+    // Vérifie si l'utilisateur est membre du club au démarrage
     _verifierMembre();
   }
 
   /// Vérifie si l'utilisateur est membre du club
+  /// Méthode asynchrone qui interroge Firestore pour vérifier l'adhésion
   Future<void> _verifierMembre() async {
+    // Récupère l'utilisateur actuellement connecté
     final utilisateur = FirebaseAuthService.currentUser;
+    // Vérifie si un utilisateur est connecté
     if (utilisateur != null) {
+      // Vérifie si l'utilisateur est membre du club via le contrôleur
       final estMembre = await ClubController.checkMembership(
+        // ID du club à vérifier
         widget.clubId,
+        // ID de l'utilisateur
         utilisateur.uid,
       );
+      // Met à jour l'état seulement si le widget est encore monté
       if (mounted) {
+        // Met à jour l'état avec le résultat de la vérification
         setState(() => _estMembre = estMembre);
       }
     }
   }
 
   /// Gère l'adhésion ou le départ du club
+  /// Méthode asynchrone qui permet à un utilisateur de rejoindre ou quitter un club
   Future<void> _gererAdhesion() async {
+    // Vérifie si l'utilisateur est en mode invité
     if (isGuest()) {
+      // Affiche un message indiquant que la fonctionnalité est réservée aux membres
       showGuestMessage(context);
+      // Sort de la méthode sans exécuter le reste
       return;
     }
     
+    // Récupère l'utilisateur actuellement connecté
     final utilisateur = FirebaseAuthService.currentUser;
+    // Si aucun utilisateur n'est connecté, sort de la méthode
     if (utilisateur == null) return;
 
+    // Appelle le contrôleur pour rejoindre ou quitter le club
     await ClubController.toggleMembership(
+      // Contexte de l'application
       context: context,
+      // ID du club
       clubId: widget.clubId,
+      // Indique si l'utilisateur est actuellement membre (true = quitter, false = rejoindre)
       isMember: _estMembre == true,
+      // Callback pour mettre à jour l'état de chargement
       setLoading: (loading) {
+        // Met à jour l'état seulement si le widget est encore monté
         if (mounted) {
+          // Met à jour l'état de chargement
           setState(() => _enChargement = loading);
         }
       },
+      // Callback pour mettre à jour le statut de membre
       setMemberStatus: (isMember) {
+        // Met à jour l'état seulement si le widget est encore monté
         if (mounted) {
+          // Met à jour le statut de membre
           setState(() => _estMembre = isMember);
         }
       },
     );
     
+    // Vérifie à nouveau le statut de membre pour s'assurer de la cohérence
     await _verifierMembre();
   }
 

@@ -1,16 +1,28 @@
+// Import du package Flutter pour les widgets Material Design
 import 'package:flutter/material.dart';
+// Import des localisations pour l'internationalisation (français/anglais)
 import 'package:projectexamen/l10n/app_localizations.dart';
+// Import de l'écran de connexion
 import 'package:projectexamen/screens/LoginScreen.dart';
+// Import de l'écran d'inscription
 import 'package:projectexamen/screens/RegisterScreen.dart';
+// Import de l'écran de navigation principal
 import 'package:projectexamen/screens/main_navigation_screen.dart';
 
+// Import des constantes de tailles (dimensions, espacements)
 import 'package:projectexamen/styles/sizes.dart';
+// Import des styles de couleurs utilisés dans l'application
 import 'package:projectexamen/styles/colors.dart';
+// Import des constantes d'espacement entre les éléments
 import 'package:projectexamen/styles/spacings.dart';
 
+// Import des images utilisées dans l'application
 import '../styles/images.dart';
+// Import du widget carousel pour afficher les informations
 import '../widgets/carousel.dart';
+// Import du widget bouton principal personnalisé
 import '../widgets/main_button.dart';
+// Import des utilitaires pour gérer le mode invité
 import '../utils/guest_utils.dart';
 
 /// Écran d'accueil de l'application
